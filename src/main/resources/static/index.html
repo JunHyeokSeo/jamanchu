@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Session Test</title>
+</head>
+<body>
+
+<h3>회원가입</h3>
+<input id="signupEmail" placeholder="email" />
+<input id="signupPassword" placeholder="password" type="password" />
+<button onclick="signup()">Signup</button>
+
+<h3>로그인</h3>
+<input id="loginEmail" placeholder="email" />
+<input id="loginPassword" placeholder="password" type="password" />
+<button onclick="login()">Login</button>
+
+<h3>로그아웃</h3>
+<button onclick="logout()">Logout</button>
+
+<hr>
+<pre id="result"></pre>
+
+<script>
+    const BASE_URL = "http://localhost:8080";
+
+    function log(msg) {
+        document.getElementById("result").textContent = JSON.stringify(msg, null, 2);
+    }
+
+    async function signup() {
+        const email = document.getElementById("signupEmail").value;
+        const password = document.getElementById("signupPassword").value;
+
+        const res = await fetch(BASE_URL + "/signup", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",   // ★ 쿠키 포함
+            body: JSON.stringify({ email, password })
+        });
+
+        log({
+            status: res.status,
+            body: await res.text()
+        });
+    }
+
+    async function login() {
+        const email = document.getElementById("loginEmail").value;
+        const password = document.getElementById("loginPassword").value;
+
+        const res = await fetch(BASE_URL + "/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",   // ★ 쿠키 포함
+            body: JSON.stringify({ email, password })
+        });
+
+        log({
+            status: res.status,
+            body: await res.text()
+        });
+    }
+
+    async function logout() {
+        const res = await fetch(BASE_URL + "/logout", {
+            method: "POST",
+            credentials: "include"    // ★ 쿠키 포함
+        });
+
+        log({
+            status: res.status,
+            body: await res.text()
+        });
+    }
+</script>
+
+</body>
+</html>
