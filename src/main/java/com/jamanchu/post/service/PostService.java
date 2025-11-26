@@ -26,7 +26,7 @@ public class PostService {
         post.update(content);
     }
 
-    public void deletePost(Long postId, String content) {
+    public void deletePost(Long postId) {
         Post post = postRepository.findByIdAndIsDeletedIsFalse(postId).orElseThrow(() -> new IllegalArgumentException("잘못된 포스트 정보입니다."));
         post.delete();
     }
