@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head('피드')}"></head>
+<body class="bg-slate-900 text-white min-h-screen">
+
+  <nav th:replace="~{fragments/layout :: nav}"></nav>
+
+  <main class="max-w-2xl mx-auto px-4 py-6 pb-24">
+
+    <div th:if="${momentumMessage != null}"
+         class="mb-5 rounded-2xl border border-violet-500/30 bg-violet-500/10 px-4 py-3 text-sm text-violet-100">
+      <p class="font-semibold mb-1">지금 한 행동이 연결에 도움이 되고 있어요</p>
+      <p class="text-violet-200/90 leading-relaxed" th:text="${momentumMessage}">반응이 쌓이면 대화에 가까워질 수 있어요.</p>
+    </div>
+
+    <!-- Category filter bar -->
+    <div class="overflow-x-auto scrollbar-hide mb-6 -mx-4 px-4" role="navigation" aria-label="카테고리 필터">
+      <div class="flex gap-2 w-max">
+        <a th:href="@{/feed}"
+           th:classappend="${selectedCategory == null} ? 'bg-violet-600 text-white shadow-lg shadow-violet-900/40' : 'bg-slate-800 text-slate-300 border border-slate-700 hover:border-violet-500/50 hover:text-white'"
+           class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200"
+           th:attr="aria-current=${selectedCategory == null} ? 'page' : null">
+          전체
+        </a>
+        <a th:each="cat : ${categories}"
+           th:href="@{/feed(category=${cat})}"
+           th:text="${cat}"
+           th:classappend="${selectedCategory == cat} ? 'bg-violet-600 text-white shadow-lg shadow-violet-900/40' : 'bg-slate-800 text-slate-300 border border-slate-700 hover:border-violet-500/50 hover:text-white'"
+           th:attr="aria-current=${selectedCategory == cat} ? 'page' : null"
+           class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200">
+        </a>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div th:if="${posts == null or posts.isEmpty()}" class="text-center py-20" role="status" aria-live="polite">
+      <div class="text-5xl mb-4" aria-hidden="true">🌱</div>
+      <p class="text-slate-400 text-lg font-medium mb-2">아직 게시물이 없어요</p>
+      <p class="text-slate-500 text-sm mb-6">첫 번째로 취향을 공유해보세요!</p>
+      <a href="/posts/new"
+         class="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 rounded-xl font-semibold text-sm transition-all duration-200 active:scale-95">
+        <span aria-hidden="true">✍️</span> 취향 공유하기
+      </a>
+    </div>
+
+    <!-- Post cards -->
+    <div class="flex flex-col gap-4" role="feed" aria-label="취향 피드">
+      <article th:each="post : ${posts}"
+               class="group bg-slate-800/70 border border-slate-700/50 rounded-2xl p-5 hover:border-slate-600/70 hover:bg-slate-800/90 transition-all duration-200">
+
+        <!-- Card header -->
+        <div class="flex items-start justify-between mb-3 gap-2">
+          <div class="flex items-center gap-2 flex-wrap min-w-0">
+            <div class="w-8 h-8 bg-gradient-to-br from-violet-500 to-pink-500 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                 th:text="${post.nickname != null ? post.nickname.substring(0,1) : '?'}"
+                 aria-hidden="true">
+              ?
+            </div>
+            <span class="font-semibold text-white text-sm truncate" th:text="${post.nickname}">닉네임</span>
+            <span th:if="${currentUser != null and post.nickname == currentUser.nickname}"
+                  class="px-2 py-0.5 bg-violet-900/60 border border-violet-500/40 text-violet-300 text-xs rounded-full font-medium flex-shrink-0">
+              내 게시물
+            </span>
+            <span class="px-2.5 py-0.5 bg-slate-700/80 text-slate-300 text-xs rounded-full font-medium flex-shrink-0"
+                  th:text="${post.category}">
+              카테고리
+            </span>
+          </div>
+          <time class="text-slate-500 text-xs flex-shrink-0 mt-1"
+                th:attr="data-time=${post.createdAt}"
+                th:text="${post.createdAt}">
+          </time>
+        </div>
+
+        <!-- Content -->
+        <p class="text-slate-100 text-base leading-relaxed mb-4 whitespace-pre-wrap break-words"
+           th:text="${post.content}">
+          게시물 내용
+        </p>
+
+        <!-- Reaction buttons -->
+        <div class="flex flex-wrap gap-2" role="group" th:attr="aria-label=|${post.nickname}님 게시물 리액션|">
+          <!-- LIKE -->
+          <form th:action="@{/posts/{id}/react(id=${post.id})}" method="post" class="inline">
+            <input type="hidden" name="type" value="LIKE" />
+            <button type="submit"
+                    th:classappend="${post.myReaction == 'LIKE'} ? 'bg-violet-600/80 border-violet-500 text-white reaction-active' : 'bg-slate-700/60 border-slate-600/50 text-slate-300 hover:border-violet-500/50 hover:text-violet-300'"
+                    th:attr="aria-pressed=${post.myReaction == 'LIKE'} ? 'true' : 'false', aria-label=|좋아요 ${post.reactions != null and post.reactions['LIKE'] != null ? post.reactions['LIKE'] : 0}개|"
+                    class="reaction-btn inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-xs font-medium transition-all duration-200 active:scale-95">
+              <span aria-hidden="true">👍</span>
+              <span>좋아요</span>
+              <span class="font-bold" th:text="${post.reactions != null and post.reactions['LIKE'] != null ? post.reactions['LIKE'] : 0}">0</span>
+            </button>
+          </form>
+
+          <!-- EMPATHY -->
+          <form th:action="@{/posts/{id}/react(id=${post.id})}" method="post" class="inline">
+            <input type="hidden" name="type" value="EMPATHY" />
+            <button type="submit"
+                    th:classappend="${post.myReaction == 'EMPATHY'} ? 'bg-pink-600/80 border-pink-500 text-white reaction-active' : 'bg-slate-700/60 border-slate-600/50 text-slate-300 hover:border-pink-500/50 hover:text-pink-300'"
+                    th:attr="aria-pressed=${post.myReaction == 'EMPATHY'} ? 'true' : 'false', aria-label=|공감 ${post.reactions != null and post.reactions['EMPATHY'] != null ? post.reactions['EMPATHY'] : 0}개|"
+                    class="reaction-btn inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-xs font-medium transition-all duration-200 active:scale-95">
+              <span aria-hidden="true">💜</span>
+              <span>공감</span>
+              <span class="font-bold" th:text="${post.reactions != null and post.reactions['EMPATHY'] != null ? post.reactions['EMPATHY'] : 0}">0</span>
+            </button>
+          </form>
+
+          <!-- SAME_HERE -->
+          <form th:action="@{/posts/{id}/react(id=${post.id})}" method="post" class="inline">
+            <input type="hidden" name="type" value="SAME_HERE" />
+            <button type="submit"
+                    th:classappend="${post.myReaction == 'SAME_HERE'} ? 'bg-violet-600/80 border-violet-500 text-white reaction-active' : 'bg-slate-700/60 border-slate-600/50 text-slate-300 hover:border-violet-500/50 hover:text-violet-300'"
+                    th:attr="aria-pressed=${post.myReaction == 'SAME_HERE'} ? 'true' : 'false', aria-label=|나도 ${post.reactions != null and post.reactions['SAME_HERE'] != null ? post.reactions['SAME_HERE'] : 0}개|"
+                    class="reaction-btn inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-xs font-medium transition-all duration-200 active:scale-95">
+              <span aria-hidden="true">🙋</span>
+              <span>나도!</span>
+              <span class="font-bold" th:text="${post.reactions != null and post.reactions['SAME_HERE'] != null ? post.reactions['SAME_HERE'] : 0}">0</span>
+            </button>
+          </form>
+
+          <!-- CURIOUS -->
+          <form th:action="@{/posts/{id}/react(id=${post.id})}" method="post" class="inline">
+            <input type="hidden" name="type" value="CURIOUS" />
+            <button type="submit"
+                    th:classappend="${post.myReaction == 'CURIOUS'} ? 'bg-pink-600/80 border-pink-500 text-white reaction-active' : 'bg-slate-700/60 border-slate-600/50 text-slate-300 hover:border-pink-500/50 hover:text-pink-300'"
+                    th:attr="aria-pressed=${post.myReaction == 'CURIOUS'} ? 'true' : 'false', aria-label=|궁금해요 ${post.reactions != null and post.reactions['CURIOUS'] != null ? post.reactions['CURIOUS'] : 0}개|"
+                    class="reaction-btn inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-xs font-medium transition-all duration-200 active:scale-95">
+              <span aria-hidden="true">🤔</span>
+              <span>궁금해요</span>
+              <span class="font-bold" th:text="${post.reactions != null and post.reactions['CURIOUS'] != null ? post.reactions['CURIOUS'] : 0}">0</span>
+            </button>
+          </form>
+        </div>
+
+      </article>
+    </div>
+
+  </main>
+
+  <!-- Floating action button -->
+  <a href="/posts/new"
+     aria-label="새 취향 게시물 작성하기"
+     class="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-violet-600 to-pink-600 rounded-full flex items-center justify-center text-2xl font-bold shadow-xl shadow-violet-900/50 hover:scale-110 active:scale-95 transition-transform duration-200 z-40"
+     aria-hidden="false">
+    <span aria-hidden="true">+</span>
+  </a>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+
+  <style>
+    @keyframes reaction-pulse {
+      0%   { transform: scale(1); }
+      30%  { transform: scale(1.2); }
+      60%  { transform: scale(0.95); opacity: 0.85; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes reaction-pop {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    .reaction-btn {
+      will-change: transform, opacity;
+    }
+    .reaction-btn:hover {
+      transform: scale(1.05);
+    }
+    .reaction-btn.reaction-active {
+      animation: reaction-pop 0.35s ease-out;
+    }
+    .reaction-btn:active {
+      animation: reaction-pulse 0.3s ease-out;
+    }
+  </style>
+
+  <script>
+    // Relative time formatter
+    function relativeTime(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      if (isNaN(date)) return '';
+      const now = new Date();
+      const diff = Math.floor((now - date) / 1000);
+      if (diff < 60) return '방금 전';
+      if (diff < 3600) return Math.floor(diff / 60) + '분 전';
+      if (diff < 86400) return Math.floor(diff / 3600) + '시간 전';
+      if (diff < 2592000) return Math.floor(diff / 86400) + '일 전';
+      return date.toLocaleDateString('ko-KR');
+    }
+
+    document.querySelectorAll('time[data-time]').forEach(el => {
+      el.textContent = relativeTime(el.getAttribute('data-time'));
+    });
+
+    // Add click animation to reaction buttons
+    document.querySelectorAll('.reaction-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        this.style.animation = 'none';
+        this.offsetHeight; // reflow to restart animation
+        this.style.animation = 'reaction-pulse 0.3s ease-out';
+      });
+    });
+  </script>
+
+</body>
+</html>

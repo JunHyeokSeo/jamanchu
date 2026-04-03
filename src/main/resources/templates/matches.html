@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head('취향 매칭')}"></head>
+<body class="bg-slate-900 text-white min-h-screen">
+
+  <nav th:replace="~{fragments/layout :: nav}"></nav>
+
+  <main class="max-w-2xl mx-auto px-4 py-8 pb-20">
+
+    <!-- Page header -->
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold text-white mb-1">취향 매칭 💜</h1>
+      <p class="text-slate-400 text-sm">같은 취향의 사람들을 찾았어요!</p>
+    </div>
+
+    <!-- Empty state -->
+    <div th:if="${matches == null or matches.isEmpty()}"
+         class="text-center py-20 bg-slate-800/40 border border-slate-700/40 rounded-2xl">
+      <div class="text-5xl mb-4">🔍</div>
+      <p class="text-slate-300 font-semibold text-lg mb-2">아직 매칭된 사람이 없어요</p>
+      <p class="text-slate-500 text-sm mb-6 max-w-xs mx-auto leading-relaxed">
+        더 많은 취향을 공유할수록 매칭될 확률이 높아져요!
+      </p>
+      <a href="/posts/new"
+         class="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 rounded-xl font-semibold text-sm transition-colors duration-200">
+        ✍️ 취향 공유하러 가기
+      </a>
+    </div>
+
+    <!-- Match cards -->
+    <div class="flex flex-col gap-4">
+        <div th:each="match : ${matches}"
+             th:classappend="${match.status.name() == 'DECLINED'} ? 'opacity-50' : ''"
+             class="bg-slate-800/70 border border-slate-700/50 rounded-2xl p-5 transition-all duration-200">
+
+        <!-- Match header -->
+        <div class="flex items-center justify-between mb-4 gap-2">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 bg-gradient-to-br from-violet-500 to-pink-500 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0"
+                 th:text="${match.partnerNickname != null ? match.partnerNickname.substring(0,1) : '?'}"
+                 aria-hidden="true">
+              ?
+            </div>
+            <div class="min-w-0">
+              <p class="font-bold text-white text-base truncate" th:text="${match.partnerNickname}">파트너 닉네임</p>
+              <!-- Score badge -->
+              <span class="inline-flex items-center gap-1 text-xs text-violet-300 font-medium">
+                <span aria-hidden="true">✨</span>
+                <span>취향 <span th:text="${match.score}">0</span>개 일치</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Status badge -->
+          <div class="flex-shrink-0">
+            <span th:if="${match.status.name() == 'PENDING'}"
+                  role="status"
+                  class="px-3 py-1 bg-pink-900/60 border border-pink-500/40 text-pink-300 text-xs font-bold rounded-full animate-pulse">
+              새로운 매칭!
+            </span>
+            <span th:if="${match.status.name() == 'ACCEPTED'}"
+                  role="status"
+                  class="px-3 py-1 bg-green-900/40 border border-green-500/40 text-green-300 text-xs font-semibold rounded-full">
+              대화 가능
+            </span>
+            <span th:if="${match.status.name() == 'DECLINED'}"
+                  role="status"
+                  class="px-3 py-1 bg-slate-700/60 border border-slate-600/40 text-slate-400 text-xs font-semibold rounded-full">
+              거절됨
+            </span>
+          </div>
+        </div>
+
+        <!-- 공통 취향 preview -->
+         <div th:if="${match.status != 'DECLINED'}"
+              class="mb-4 bg-slate-700/30 border border-slate-700/40 rounded-xl px-4 py-3">
+          <p class="text-xs text-slate-500 font-medium mb-2">공통 취향</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span th:if="${match.commonCategories != null and !match.commonCategories.isEmpty()}"
+                  th:each="cat : ${match.commonCategories}"
+                  th:text="${cat}"
+                  class="px-2.5 py-1 bg-violet-900/50 border border-violet-500/30 text-violet-300 text-xs rounded-full font-medium">
+              카테고리
+            </span>
+            <span th:if="${match.commonCategories == null or match.commonCategories.isEmpty()}"
+                  class="text-slate-500 text-xs italic">취향 카테고리를 불러오는 중...</span>
+          </div>
+        </div>
+
+        <div th:if="${match.status.name() != 'DECLINED'}"
+             class="mb-4 rounded-xl border border-dashed border-slate-700/60 bg-slate-900/30 px-4 py-3">
+          <p class="text-xs font-semibold text-slate-300 mb-1">지금 이 연결을 어떻게 키울까요?</p>
+          <p th:if="${match.status.name() == 'PENDING' and match.score >= 3}"
+             class="text-xs text-slate-400 leading-relaxed">
+            공통 취향이 꽤 선명해요. 상대의 취향 카테고리를 훑어본 뒤 가볍게 대화를 시작해보면 자연스럽게 이어질 수 있어요.
+          </p>
+          <p th:if="${match.status.name() == 'PENDING' and match.score < 3}"
+             class="text-xs text-slate-400 leading-relaxed">
+            취향이 쌓이는 중이에요. 피드에서 진짜 공감하는 글에 조금 더 반응해두면 대화로 이어질 실마리가 더 잘 보여요.
+          </p>
+          <p th:if="${match.status.name() == 'ACCEPTED' and match.lastMessage == null}"
+             class="text-xs text-slate-400 leading-relaxed">
+            이제 첫 인사만 건네면 돼요. 공통 취향이나 같은 카테고리 이야기를 꺼내면 대화가 훨씬 쉬워져요.
+          </p>
+          <p th:if="${match.status.name() == 'ACCEPTED' and match.lastMessage != null}"
+             class="text-xs text-slate-400 leading-relaxed">
+            이미 대화가 열려 있어요. 최근 메시지에서 이어질 만한 포인트를 하나 잡아 답장을 건네보세요.
+          </p>
+        </div>
+
+        <!-- PENDING: Accept / Decline actions -->
+        <div th:if="${match.status.name() == 'PENDING'}" class="flex gap-2">
+          <form th:action="@{/matches/{id}/accept(id=${match.id})}" method="post" class="flex-1">
+            <button type="submit"
+                    th:attr="aria-label=|${match.partnerNickname}님의 매칭 수락하기|"
+                    class="w-full py-2.5 bg-violet-600 hover:bg-violet-500 rounded-xl text-sm font-bold text-white transition-all duration-200 active:scale-95 hover:shadow-lg hover:shadow-violet-900/30">
+              수락하기 💜
+            </button>
+          </form>
+          <form th:action="@{/matches/{id}/decline(id=${match.id})}" method="post" class="flex-1">
+            <button type="submit"
+                    th:attr="aria-label=|${match.partnerNickname}님의 매칭 거절하기|"
+                    class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-all duration-200 active:scale-95">
+              거절하기
+            </button>
+          </form>
+        </div>
+
+        <!-- ACCEPTED: Chat link + last message -->
+        <div th:if="${match.status.name() == 'ACCEPTED'}">
+          <div th:if="${match.lastMessage != null}"
+               class="mb-3 bg-slate-700/50 rounded-xl px-4 py-2.5 text-slate-300 text-sm">
+            <p class="text-slate-500 text-xs mb-1">마지막 메시지</p>
+            <p class="line-clamp-1" th:text="${match.lastMessage}">마지막 메시지 내용</p>
+          </div>
+          <a th:href="@{/chat/{id}(id=${match.id})}"
+             class="relative flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-all duration-200 active:scale-95">
+            <span>채팅하기 💬</span>
+            <span th:if="${match.unreadCount > 0}"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 min-w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-xs font-bold px-1"
+                  th:text="${match.unreadCount}">
+              0
+            </span>
+          </a>
+        </div>
+
+        <!-- DECLINED: grayed message -->
+        <div th:if="${match.status.name() == 'DECLINED'}">
+          <p class="text-center text-slate-500 text-sm py-2">이 매칭은 거절되었어요</p>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+
+</body>
+</html>
