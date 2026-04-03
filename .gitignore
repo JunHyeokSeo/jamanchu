@@ -1,9 +1,15 @@
 .gradle/
 build/
 out/
+bin/
 data/*.mv.db
 data/*.trace.db
 .idea/
+.omc/
+.classpath
+.factorypath
+.project
+.settings/
 *.iml
 *.log
 .DS_Store
